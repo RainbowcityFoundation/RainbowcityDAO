@@ -21,6 +21,7 @@ abstract contract MiningBase {
         uint extracted;//已提取
         uint price;//设置交易价格
         uint mortgage;//质押数量
+
     }
 
     //设置管理员地址
@@ -36,10 +37,14 @@ abstract contract MiningBase {
 
     }
 
+    // function setBankAddress(address bank) external onlyAdmin{
+    //     _bank_Address = bank;
+    // }
+
     //记录管理员更改的锁仓时间
-    event LockTimeRecord(uint indexed time, uint indexed timechange);
+    event LockTimeRecord(uint indexed time , uint indexed timechange);
     //用户质押记录
-    event MortgageValueAmount (address indexed userAddress, uint indexed month, uint indexed mortgageAmount);
+    event MortgageValueAmount (address indexed userAddress,  uint indexed  month, uint indexed  mortgageAmount);
     //管理员取钱记录
     event AdminTakeValue(address indexed Mining, address indexed Admin, uint indexed value);
     //记管理员交替
@@ -108,7 +113,29 @@ abstract contract MiningBase {
         }
         return extractable;
     }
-
+    /*
+  *全部提取
+ */
+    function extract() public {
+        uint extractable = 0;
+        uint32 blockTime = uint32(block.timestamp % 2 ** 32);
+        for (uint i = 0; i < lockUpTotal[msg.sender].length; i++) {
+            Record memory res = lockUpTotal[msg.sender][i];
+            if (blockTime >= res.startTime && blockTime < res.endTime) {
+                uint amount = (res.amount.mul(4).div(5)).mul((blockTime - res.startTime)).div(_lockTime);
+                uint extracted = amount.sub(res.extracted).sub(res.mortgage);
+                extractable = extracted.add(extractable);
+                res.extracted += extracted;
+            }
+            if (blockTime >= res.endTime) {
+                uint extracted = res.amount.mul(4).div(5).sub(res.extracted).sub(res.mortgage);
+                extractable = extracted.add(extractable);
+                res.extracted += extracted;
+            }
+        }
+        userTotalReceived[msg.sender] += extractable;
+        TransferHelper.safeTransfer(_Rbt, msg.sender, extractable);
+    }
     /*
     *提取提取某一笔
     */
@@ -122,7 +149,7 @@ abstract contract MiningBase {
         TransferHelper.safeTransfer(_Rbt, msg.sender, extractable);
         return extractable;
     }
-    //获取 挖矿总量、未释放、可提取
+        //获取 挖矿总量、未释放、可提取
     function getRbtRecord() public view returns (uint, uint, uint){
         uint allRbt = 0;
         uint lockNum = 0;
@@ -150,4 +177,6 @@ abstract contract MiningBase {
 
         return (allRbt, lockNum, extractable);
     }
+
+
 }
