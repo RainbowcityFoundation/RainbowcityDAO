@@ -54,7 +54,7 @@ contract RbSeedSubscription is MiningBase {
     }
 
     bool public turnOnOff;
-    //添加代币的开关 
+    //添加代币的开关
     function setTurnOnOff(bool turnType) public onlyAdmin {
         turnOnOff = turnType;
     }
@@ -94,7 +94,7 @@ contract RbSeedSubscription is MiningBase {
             isSubSeedsLeftNum = 1000000 * 10 ** 18;
             totalAmount-=isSubSeedsLeftNum;
         }
-        
+
         emit PurchaseRecord(msg.sender, value, rbtSeedAmount, token);
     }
     //获得记录长度
