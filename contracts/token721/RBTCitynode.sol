@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 import "../interface/token721/IRbtDeposit721.sol";
 import "../lib/TokenSet.sol";
 import "../interface/token721/IERC721Receiver.sol";
+import "../ref/CoreRef.sol";
 import "../interface/token721/IRBTCitynode.sol";
 
 //治理令牌
-contract RBTCitynode is IRBTCitynode {
+contract RBTCitynode is CoreRef,IRBTCitynode {
     using Set for Set.TokenIdSet;//set库
     string public name;
     address private elf;
@@ -33,7 +34,7 @@ contract RBTCitynode is IRBTCitynode {
         uint expireTime;
     }
     
-     constructor(string memory name_) {
+     constructor(address core,string memory name_)CoreRef(core){
         name = name_;
     }
     
@@ -205,4 +206,5 @@ contract RBTCitynode is IRBTCitynode {
         assembly { size := extcodesize(account) }
         return size > 0;
     }
+
 }

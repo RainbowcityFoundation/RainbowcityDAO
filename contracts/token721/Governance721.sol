@@ -3,12 +3,13 @@ pragma solidity ^0.8.0;
 import "../interface/token721/IRbtDeposit721.sol";
 import "../lib/TokenSet.sol";
 import "../interface/token721/IERC721Receiver.sol";
+import "../ref/CoreRef.sol";
 import "../interface/token721/IGovernance721.sol";
 
 //治理令牌
-contract Governance721 is IGovernance721 {
+contract Governance721 is CoreRef,IGovernance721 {
     using Set for Set.TokenIdSet;//set库
-    string private name;
+    string public name;
     address private elf;
     address private envoy;
     address private partner;
@@ -25,10 +26,6 @@ contract Governance721 is IGovernance721 {
     mapping (uint256 => address) private _tokenApprovals;// tokenId----授权的地址
     //再授权时，从所有者到操作者的映射
     mapping (address => mapping (address => bool)) private _operatorApprovals;
-
-    constructor(string memory name_) {
-        name = name_;
-    }
     
     //结构体
     struct Governance721 {
@@ -37,11 +34,16 @@ contract Governance721 is IGovernance721 {
         uint startTime;
         uint expireTime;
     }
-   
+    
+    constructor(address core,address _exchangeGovernance721, string memory  _name  )CoreRef(core){
+        name = _name;
+        exchangeGovernance721=_exchangeGovernance721;
+    }
+    
     /*
     * 增发令牌
     */
-    function mint(uint times,address from)  external override  returns(uint) {
+    function mint(uint times,address from) onlyExchangeGovernance721 external override  returns(uint) {
         //当前区块的时间，在unit32范围内
         uint32 blockTime = uint32(block.timestamp % 2 ** 32);
         uint tokenId=list.length+1;
@@ -205,5 +207,11 @@ contract Governance721 is IGovernance721 {
         uint256 size;
         assembly { size := extcodesize(account) }
         return size > 0;
+    }
+
+     //修饰器用来检查调用者地址是否正确
+    modifier onlyExchangeGovernance721 {
+        require(msg.sender==exchangeGovernance721, "is not bank");
+        _;
     }
 }
