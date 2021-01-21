@@ -2,9 +2,11 @@ pragma solidity ^0.8.0;
 import "../interface/token721/IRbtDeposit721.sol";
 import "../lib/TokenSet.sol";
 import "../interface/token721/IERC721Receiver.sol";
+import "../interface/bank/IRbBank.sol";
+import "../ref/CoreRef.sol";
 
     //存款令牌
-    contract RbtDeposit721 is IRbtDeposit721 {
+    contract RbtDeposit721 is CoreRef,IRbtDeposit721 {
         using Set for Set.TokenIdSet;//set库
         struct Deposit{
             address owner;
@@ -12,7 +14,17 @@ import "../interface/token721/IERC721Receiver.sol";
             uint startTime;
             uint expireTime;
             uint amount;
-        }
+    }
+    
+     //构造函数
+    constructor(address core)CoreRef(core){}
+    
+    function init(address _bank) external {
+        bank =_bank;
+    }
+
+    //银行地址
+    address bank;
     //令牌总个数
     uint Lengths;
     Deposit[] private list ;
@@ -22,9 +34,9 @@ import "../interface/token721/IERC721Receiver.sol";
     mapping (address => mapping (address => bool)) private _operatorApprovals;
    
     /*
-    * 增发令牌
+    * 增发令牌，只限制银行可以增发令牌（_isBank）获得凭证。
     */
-    function mint(address to,  uint amounts, uint month)  external override returns(uint) {
+    function mint(address to,  uint amounts, uint month) onlyBank external override returns(uint) {
         //当前区块的时间，在unit32范围内
         uint32 blockTime = uint32(block.timestamp % 2 ** 32);
         //增发一个新令牌，该地址下令牌数量加1
@@ -44,7 +56,7 @@ import "../interface/token721/IERC721Receiver.sol";
     }
 
     //销毁令牌
-    function burn(uint256 tokenId)  external override  virtual {
+    function burn(uint256 tokenId) onlyBank external override  virtual {
         address owner = ownerOf(tokenId);
         userToken[owner].remove(tokenId);
         delete list[tokenId-1];
@@ -170,5 +182,11 @@ import "../interface/token721/IERC721Receiver.sol";
         uint256 size;
         assembly { size := extcodesize(account) }
         return size > 0;
+    }
+    
+    //修饰器用来检查调用者是否是银行
+    modifier onlyBank {
+        require(msg.sender==bank, "is not bank");
+        _;
     }
 }
