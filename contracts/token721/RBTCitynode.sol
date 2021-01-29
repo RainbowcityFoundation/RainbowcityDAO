@@ -14,6 +14,7 @@ contract RBTCitynode is CoreRef,IRBTCitynode {
     address private envoy;
     address private partner;
     address private node;
+    address exchangeGovernance721;
     //令牌总个数
     uint public Lengths;
     //用户令牌过期数量
@@ -34,14 +35,15 @@ contract RBTCitynode is CoreRef,IRBTCitynode {
         uint expireTime;
     }
     
-     constructor(address core,string memory name_)CoreRef(core){
-        name = name_;
+    constructor(address core,address _exchangeGovernance721, string memory  _name  )CoreRef(core){
+        name = _name;
+        exchangeGovernance721=_exchangeGovernance721;
     }
     
     /*
     * 增发令牌
     */
-    function mint(uint times,address from) external override  returns(uint) {
+    function mint(uint times,address from) onlyExchangeGovernance721 external override  returns(uint) {
         //当前区块的时间，在unit32范围内
         uint32 blockTime = uint32(block.timestamp % 2 ** 32);
         uint tokenId=list.length+1;
@@ -205,6 +207,12 @@ contract RBTCitynode is CoreRef,IRBTCitynode {
         uint256 size;
         assembly { size := extcodesize(account) }
         return size > 0;
+    }
+
+      //修饰器用来检查调用者地址是否正确
+    modifier onlyExchangeGovernance721 {
+        require(msg.sender==exchangeGovernance721, "is not ExchangeGovernance721");
+        _;
     }
 
 }
