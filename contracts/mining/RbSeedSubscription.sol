@@ -97,10 +97,7 @@ contract RbSeedSubscription is MiningBase {
 
         emit PurchaseRecord(msg.sender, value, rbtSeedAmount, token);
     }
-    //获得记录长度
-    function getRecordsLength() public view returns (uint){
-        return RbSeedSubscriptionRecord[msg.sender].length;
-    }
+   
 
 
 
