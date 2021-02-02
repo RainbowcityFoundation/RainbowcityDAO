@@ -19,7 +19,7 @@ contract Rbinvite is MiningBase {
     address public RbConsensus;
     //全部领取：用于展示
     uint public allReceived;
- 
+
     //协调器传参
     constructor(
         address ex,
