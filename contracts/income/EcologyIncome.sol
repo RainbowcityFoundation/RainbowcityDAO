@@ -15,8 +15,7 @@ contract EcologyIncome is Initializable {
     
     uint32 aa = 9;
     IRbtVip public rbtvip;
-    //收税人
-    // address public feeto;
+    
     //管理者
     address public admin;
     
@@ -98,6 +97,67 @@ contract EcologyIncome is Initializable {
         receive3[from][tokenadderss][source] +=amount;//TODO
     }
     
+    
+    function queryToken(address from,uint32 source, address tokenadderss) public view returns (uint256) {
+        
+        userVipStruct.User memory a = rbtvip.getUserInfo(from);
+        uint32 blockNumber = safe32( block.number,"RBT: vote amount underflows");
+        address referUser = a.addrRef;
+        uint256 amount = getAmounts(from, source,tokenadderss, blockNumber);
+        if(referUser  == msg.sender){
+            
+            return amount.mul(20).div(100).mul(80).div(100).mul(aa);//TODO
+        
+            // re3[from][tokenadderss] += amount2; 
+            
+        }else{
+            userVipStruct.User memory b = rbtvip.getUserInfo(referUser);
+            
+            if(b.addrRef  == msg.sender){
+
+                return amount.mul(20).div(100).mul(20).div(100).mul(aa);//TODO
+
+                // re3[from][tokenadderss] += amount3;
+                
+            }
+            return 0;
+        }
+    }
+    
+    /**
+    * @notice 获取某区块票数
+    * @param from 要查绚的地址
+    * @param tokenadderss 要查绚的地址
+    * @param blockNumber 要查绚的区块
+    */
+    function getAmounts(address from,uint32 source, address tokenadderss, uint32 blockNumber) public view returns (uint256) {
+         require(blockNumber <= block.number, "RBT: not yet determined");
+    
+         uint32 nCheckpoints = numCheckpoints[from][tokenadderss][source];
+         if (nCheckpoints == 0 || receive2[from][tokenadderss][source][0].fromBlock > blockNumber) {
+             return 0;
+         }
+         
+         if (receive2[from][tokenadderss][source][nCheckpoints - 1].fromBlock <= blockNumber) {
+             return receive2[from][tokenadderss][source][nCheckpoints - 1].amount;
+         }
+    
+         uint32 lower = 0;
+         uint32 upper = nCheckpoints - 1;
+         while (upper > lower) {
+             uint32 center = upper - (upper - lower) / 2; 
+             Checkpoint memory cp = receive2[from][tokenadderss][source][center];
+             if (cp.fromBlock == blockNumber) {
+                 return cp.amount;
+             } else if (cp.fromBlock < blockNumber) {
+                 lower = center;
+             } else {
+                 upper = center - 1;
+             }
+        }
+        return receive2[from][tokenadderss][source][lower].amount;
+     }
+     
     function _writereceive(address useraddress,uint32 source, uint32 nCheckpoints,address tokenadderss, uint256 amount) internal {
         uint32 dstRepNum = numCheckpoints[useraddress][tokenadderss][source];
         uint256 oldAmounts = dstRepNum > 0 ? receive2[useraddress][tokenadderss][source][dstRepNum - 1].amount : 0;
