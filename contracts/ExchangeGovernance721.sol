@@ -27,6 +27,10 @@ contract ExchangeGovernance721 is CoreRef {
         types[_rbtPartner] = 50000;
         types[_rbtNode] = 100000;
     }
+
+    function initCitynode(address _rbtCitynode) external {
+        rbtCitynode=_rbtCitynode;
+    }
     //增发精灵，大使，合伙人，超级节点令牌  
     function addNftToken( uint tokenId,address _address)external{ 
         address owner=deposit.ownerOf(tokenId);
