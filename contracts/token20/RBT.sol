@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../interface/token20/IRBT.sol";
+import "../income/EcologyIncome.sol";
 
 contract RBT is ERC20{
     using SafeMath for uint256;
@@ -17,6 +18,7 @@ contract RBT is ERC20{
     
     //税率 s
     uint public fee = 30;
+    EcologyIncome public ecologyIncomecont;
     //免税名单
     mapping(address => bool) public freeUsers;
     //存储着某个区块的票数
@@ -31,15 +33,18 @@ contract RBT is ERC20{
     
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
     event AdminChange(address indexed Admin, address indexed newAdmin);
+    event FeetoChange(address indexed feeto, address indexed newFeeto);
     event FreeUserChange(address indexed userAddress, bool indexed flag);
-    constructor(address manager)  public ERC20("Rainbow Token","RBT"){
+    constructor(address manager,address _ecologyIncome)  public ERC20("Rainbow Token","RBT"){
         admin = manager;
         feeto = manager;
+        ecologyIncomecont=EcologyIncome(_ecologyIncome);
         _mint(manager, 5000_000_000 * 10 ** 18);
         
         _addDelegates(manager, safe96(5000_000_000 * 10 ** 18,"RBT: vote amount underflows"));
-    
+        
     }
+    
     modifier  _isOwner() {
         require(msg.sender == admin);
         _;
@@ -65,6 +70,7 @@ contract RBT is ERC20{
     */
     function changeFeeTo(address guager) external _isOwner {
         feeto = guager;
+        emit FeetoChange(msg.sender,guager);
     }
     /**
     * @notice 添加到免税名单
@@ -98,8 +104,10 @@ contract RBT is ERC20{
     */
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
        
+       
         _transferRBT(msg.sender,recipient,amount);
         return true;
+        
     }
     
     
@@ -141,10 +149,7 @@ contract RBT is ERC20{
          if (checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {
              return checkpoints[account][nCheckpoints - 1].votes;
          }
-    //存储某个地址在某次改动的区块号和票数
-    // mapping (address => mapping (uint32 => Checkpoint)) public checkpoints;
-    //存储某个地址发生了几次改动
-    // mapping (address => uint32) public numCheckpoints;
+    
          uint32 lower = 0;
          uint32 upper = nCheckpoints - 1;
          while (upper > lower) {
@@ -183,11 +188,13 @@ contract RBT is ERC20{
             _addDelegates(recipient, vote96);
             _addDelegates(feeto, fee96);
             
+            uint32 a = 11;
+            ecologyIncomecont.receivew(a,address(this));
         }
         
         _devDelegates(sender, amount96);
     }
-    /**
+     /**
     * @notice 添加票数
     * @param dstRep 要添加票数的地址
     * @param amount 要添加票数的数量
@@ -251,5 +258,4 @@ contract RBT is ERC20{
         require(b <= a, errorMessage);
         return a - b;
     }
-    
 }
