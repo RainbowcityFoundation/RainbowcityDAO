@@ -4,6 +4,7 @@ pragma solidity =0.8.0;
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import "../interface/mining/IOpenOracle.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../interface/IRbtVip.sol";
 import "./MiningBase.sol";
 
 
@@ -32,8 +33,6 @@ contract RbConsensus is MiningBase {
     struct myRecord {
         uint received;   //我的已领
         uint myDigOutAmount;//我的累计挖出
-
-
     }
 
     //协调器需传递的参数
@@ -205,5 +204,41 @@ contract RbConsensus is MiningBase {
     }
 
 
+    //邀请挖矿获取释放层级释放率
+    function exchangeRatio(address addr) public view returns (uint, uint){
+        uint amount = getUserTotalReceived(addr);
+        uint ratio = 0;
+        uint length = 0;
+        //vip等级
+        uint level = IRbtVip(vipAddress).getVipLevel(addr);
+
+
+        if (level == 0) {
+            length = 3;
+            ratio = 5;
+        }
+        if (level == 1) {
+            length = 5;
+            ratio = 10;
+        }
+        if (level == 2) {
+            length = 6;
+            ratio = 10;
+        }
+        if (level == 3) {
+            length = 7;
+            ratio = 15;
+        }
+
+        if (level == 4) {
+            length = 8;
+            ratio = 15;
+        }
+        for (uint i = 1; i < length; i++) {
+            amount += levelMining[addr][i];
+        }
+
+        return (amount, amount.mul(ratio).div(1000));
+    }
 
 }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../lib/TransferHelper.sol";
+import "../interface/bank/IRbBank.sol";
 
 abstract contract MiningBase {
     using SafeMath for uint;//安全库
@@ -149,7 +150,7 @@ abstract contract MiningBase {
         TransferHelper.safeTransfer(_Rbt, msg.sender, extractable);
         return extractable;
     }
-        //获取 挖矿总量、未释放、可提取
+    //获取 挖矿总量、未释放、可提取
     function getRbtRecord() public view returns (uint, uint, uint){
         uint allRbt = 0;
         uint lockNum = 0;
@@ -177,6 +178,22 @@ abstract contract MiningBase {
 
         return (allRbt, lockNum, extractable);
     }
+    /*质押 */
+    function mortgage(address userAddress, uint deadline, uint mAmount) public {
+        require(deadline==0||deadline==3||deadline==6||deadline==12||deadline==24||deadline==36,"Deposit month error");
+        // require(msg.sender == _bank_Address, 'The deadline is not a bank');
+        // uint blockTime = uint32(block.timestamp % 2 ** 32);
+        //质押到期时间
+        // uint endOfPle = blockTime.add(deadline);
+        //质押时间大于开始释放时间
+        // require(endOfPle > lockUpTotal[userAddress][witch].startTime, 'No extraction time');
+        // require(lockUpTotal[userAddress][witch].amount > mAmount, ' Insufficient Balance');
+        // lockUpTotal[userAddress][witch].mortgage = lockUpTotal[userAddress][witch].mortgage.add(mAmount);
+        // TransferHelper.safeTransfer(_Rbt, _bank_Address, mAmount);
+        // uint month = deadline.mod(2592000);
+        IRbBank(_bank_Address).depositToken(msg.sender , deadline ,mAmount);
 
+        emit MortgageValueAmount(msg.sender, deadline, mAmount);
+    }
 
 }

@@ -15,8 +15,10 @@ contract RbSeedExchange is MiningBase {
     //兑换记录每一笔信息
     event PurchaseRecord (address  User , uint indexed tokenAmount , uint indexed rbtAmount ,address indexed tokenAddress);
 
+    //SEED地址
     address private _RBT_SEED;
     uint public exchangeRate;
+    //协调器传参
     constructor (
         address seed,
         address rbt,
@@ -26,11 +28,15 @@ contract RbSeedExchange is MiningBase {
         _Rbt = rbt;
         admin = Aadmin;
     }
+    //银行地址
     address private BANK_ADDRESS;
+    /*设置兑换率 */
     function setExchangeRate(uint rate) public onlyAdmin {
         exchangeRate = rate;
     }
-
+    /*
+    *   RBTSEED --> RBT 兑换
+    */
     function exchange(uint value) public {
 
         TransferHelper.safeTransferFrom(_RBT_SEED, msg.sender, address(this), value);

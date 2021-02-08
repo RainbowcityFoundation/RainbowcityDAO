@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../token721/Governance721.sol";
 import "../lib/TransferHelper.sol";
 
-contract BIncome {
+contract GovernIncome {
     
     
     address public admin;
@@ -61,6 +61,7 @@ contract BIncome {
             Supply = elfSupply+envoySupply+parterSupply+nodeSupply;
             amount[user] += Supply;
             Supply = 0;
+            i++;
           }
          
      }

@@ -211,7 +211,7 @@ contract Governance721 is CoreRef,IGovernance721 {
 
      //修饰器用来检查调用者地址是否正确
     modifier onlyExchangeGovernance721 {
-        require(msg.sender==exchangeGovernance721, "is not bank");
+        require(msg.sender==exchangeGovernance721, "is not ExchangeGovernance721");
         _;
     }
 }
