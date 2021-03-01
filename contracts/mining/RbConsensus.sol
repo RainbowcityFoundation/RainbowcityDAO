@@ -50,7 +50,7 @@ contract RbConsensus is MiningBase {
         transferPrice = 40;
         admin = Aadmin;
         cumulRbt = 500000 * 10 ** 18;
-        source = 0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC;
+        source = 0xb0cd651b57bab654392927b83c117493c4fdadcb;
 
     }
 

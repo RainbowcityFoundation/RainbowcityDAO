@@ -19,6 +19,8 @@ contract Rbinvite is MiningBase {
     address public RbConsensus;
     //全部领取：用于展示
     uint public allReceived;
+    //兑换记录每一笔信息
+    event PurchaseRecord (address  User , uint indexed tokenAmount , uint indexed rbtAmount ,address indexed tokenAddress );
 
     //协调器传参
     constructor(
@@ -43,6 +45,7 @@ contract Rbinvite is MiningBase {
         allReceived = allReceived.add(examount.div(5));
         digOutAmount = digOutAmount.add(examount);
         cumuRbt[msg.sender] += examount;
+        emit PurchaseRecord(msg.sender , amount , examount ,_RBTEX );
     }
 
 }
