@@ -80,7 +80,7 @@ contract RbConsensus is MiningBase {
     //预言机获取获取价格
     function getPrice(string memory K) public view returns (uint64 a, uint64 b){
 
-        (a, b) = IOpenOracle(0x00c4770D3Feb38ad07f879Abd96619FBdeb00520).get(source, K);
+        (a, b) = IOpenOracle(0x5b9dbebbad94b8c6467af9e8a851bb120f9601c6).get(source, K);
     }
     //递归查询挖矿等级
     function _recursionAddAmount(address sender, uint amount, uint i) internal {
