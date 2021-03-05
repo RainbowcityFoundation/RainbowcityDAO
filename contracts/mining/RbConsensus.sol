@@ -50,7 +50,7 @@ contract RbConsensus is MiningBase {
         transferPrice = 40;
         admin = Aadmin;
         cumulRbt = 500000 * 10 ** 18;
-        source = 0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC;
+        source = 0xb0cd651b57bab654392927b83c117493c4fdadcb;
 
     }
 
@@ -80,7 +80,7 @@ contract RbConsensus is MiningBase {
     //预言机获取获取价格
     function getPrice(string memory K) public view returns (uint64 a, uint64 b){
 
-        (a, b) = IOpenOracle(0x00c4770D3Feb38ad07f879Abd96619FBdeb00520).get(source, K);
+        (a, b) = IOpenOracle(0x5b9dbebbad94b8c6467af9e8a851bb120f9601c6).get(source, K);
     }
     //递归查询挖矿等级
     function _recursionAddAmount(address sender, uint amount, uint i) internal {
