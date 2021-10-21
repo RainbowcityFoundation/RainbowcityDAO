@@ -5,9 +5,9 @@ import "../interface/token721/IERC721Receiver.sol";
 import "../interface/bank/IRbBank.sol";
 import "../ref/CoreRef.sol";
 
-    //存款令牌
+    //Deposit the token
     contract RbtDeposit721 is CoreRef,IRbtDeposit721 {
-        using Set for Set.TokenIdSet;//set库
+        using Set for Set.TokenIdSet;
         struct Deposit{
             address owner;
             uint tokenId;
@@ -16,30 +16,30 @@ import "../ref/CoreRef.sol";
             uint amount;
     }
     
-     //构造函数
+     //Constructo
     constructor(address core)CoreRef(core){}
     
     function init(address _bank) external {
         bank =_bank;
     }
 
-    //银行地址
+    //bank address
     address bank;
-    //令牌总个数
+    //Total number of tokens
     uint Lengths;
     Deposit[] private list ;
     mapping(address=>Set.TokenIdSet) userToken ;
-    mapping (uint256 => address) private _tokenApprovals;// tokenId----授权的地址
-    //再授权时，从所有者到操作者的映射
+    mapping (uint256 => address) private _tokenApprovals;// tokenId----Authorized address
+    //Mapping from owner to operator when sublicensing
     mapping (address => mapping (address => bool)) private _operatorApprovals;
    
     /*
-    * 增发令牌，只限制银行可以增发令牌（_isBank）获得凭证。
+    * To issue additional tokens, only the bank can issue additional tokens (_isBank) to obtain certificates .
     */
     function mint(address to,  uint amounts, uint month) onlyBank external override returns(uint) {
-        //当前区块的时间，在unit32范围内
+        //Time of the current block
         uint32 blockTime = uint32(block.timestamp % 2 ** 32);
-        //增发一个新令牌，该地址下令牌数量加1
+        //Issue a new token, the number of orders for that address increases by 1
         uint256 tokenId = list.length+1;
         uint expireTime=blockTime +(month*2592000);
         Deposit memory record = Deposit({
@@ -55,7 +55,7 @@ import "../ref/CoreRef.sol";
         return  tokenId;
     }
 
-    //销毁令牌
+    //Destruction of the token
     function burn(uint256 tokenId) onlyBank external override  virtual {
         address owner = ownerOf(tokenId);
         userToken[owner].remove(tokenId);
@@ -64,46 +64,46 @@ import "../ref/CoreRef.sol";
         emit Transfer(owner, address(0), tokenId);
     }
     
-    //根据tokenid找到所有者地址
+    //Find the owner address based on tokenID
     function ownerOf(uint256 _tokenId) public view override returns (address owner){
         owner=list[_tokenId-1].owner;
     }
-    //发行令牌总数
+    //Total number of tokens issued
     function totalSupply() public view returns (uint256 totalSupply){
         totalSupply=Lengths;
     }
 
-    //用户的令牌数量
+    //The number of tokens for the user
     function balanceOf(address _owner) public view override returns (uint balance){
         balance=userToken[_owner].length();
     }
 
-    //查询令牌押质押数
+    //Query the number of tokens pledged
     function amount(uint256 tokenId) public view override returns(uint){
         return  list[tokenId-1].amount;
     }
     
-     //查询令牌有效期
+     //Query the token validity period
     function expire(uint256 tokenId) public view override returns(uint){
         return  list[tokenId-1].expireTime;
     }
     
-    //tokenId是否存在
+    //Whether tokenId exists  
     function _exists(uint256 tokenId) public view override returns (bool) {
         return list[tokenId].owner != address(0);
     }
     
-     //查询用户下tokenid列表中的任意一个token
+     //Query any token in the tokenID list of a user  
      function tokenOfOwnerByIndex(address owner, uint256 index) public view override returns (uint256) {
         return userToken[owner].at(index);
     }
     
-    //查看令牌信息
+    //View token information
     function tokenMetadata(uint _tokenId) public view  returns (Deposit memory ) {
         return list[_tokenId-1];
     }
 
-    //令牌转移
+    //The token transfer
     function transfer(address _from, address _to, uint256 _tokenId) public  {
         require(ownerOf(_tokenId) == _from, "ERC721: transfer of token that is not own");
         require(_to != address(0), "ERC721: transfer to the zero address");
@@ -113,51 +113,51 @@ import "../ref/CoreRef.sol";
         emit Transfer(_from, _to, _tokenId);
     }
     
-    //授予地址_to具有_tokenId的控制权，方法成功后需触发Approval 事件。   
+    //Grant address _to control of _tokenId  
     function approve(address _to, uint256 _tokenId)public override {
         require(msg.sender == list[_tokenId].owner);
-        require(msg.sender != _to);//授权的目标不是自己
+        require(msg.sender != _to);//Empowerment is not about you
         _tokenApprovals[_tokenId] = _to;
         emit Approval(list[_tokenId].owner, _to, _tokenId);
     }
     
-    //获得批准的地址
+    //Approved address
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
         require(_exists(tokenId), "ERC721: operator query for nonexistent token");
         address owner = ownerOf(tokenId);
         return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
     }
     
-     //用来查询授权
+     //Query authorization
     function getApproved(uint256 tokenId) public view override returns (address) {
         require(_exists(tokenId), "ERC721: approved query for nonexistent token");
         return _tokenApprovals[tokenId];
     }
     
-    //授予地址_operator具有所有NFTs的控制权，成功后需触发ApprovalForAll事件。
+    //Grant the address _operator control over all NFTs, and upon success trigger the ApprovalForAll event .
     function setApprovalForAll(address operator, bool approved) public override virtual  {
         require(operator != msg.sender, "ERC721: approve to caller");
         _operatorApprovals[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
     }
     
-     //用来查询授权
+     //Used to query authorization
     function isApprovedForAll(address owner, address operator) public view override returns (bool) {
         return _operatorApprovals[owner][operator];
     }
     
-    //转移NFT所有权
+    //Transfer NFT ownership
      function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override virtual   {
         transfer(from, to, tokenId);
         require(_checkOnERC721Received(from, to, tokenId, _data), "ERC721: transfer to non ERC721Receiver implementer");
     }
     
-    //转移NFT所有权
+    //Transfer NFT ownership
     function safeTransferFrom(address from, address to, uint256 tokenId) public override virtual  {
         safeTransferFrom(from, to, tokenId, "");
     }
     
-    //内部函数,调用在目标地址,如果目标地址不是协定，则不执行调用。
+    //Internal function, called at the target address, if the target address is not the protocol, the call is not executed.  
      function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory _data)
         private returns (bool)
     {
@@ -177,14 +177,14 @@ import "../ref/CoreRef.sol";
          return true;
     }
 
-    //是否是contract地址
+    //Is it a contract address
     function isContract(address account) internal view returns (bool) {
         uint256 size;
         assembly { size := extcodesize(account) }
         return size > 0;
     }
     
-    //修饰器用来检查调用者是否是银行
+    //Decorator to check whether the caller is a bank
     modifier onlyBank {
         require(msg.sender==bank, "is not bank");
         _;
