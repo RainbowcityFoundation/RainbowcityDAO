@@ -11,24 +11,24 @@ import "../income/EcologyIncome.sol";
 
 contract RBT is ERC20{
     using SafeMath for uint256;
-    //管理者
+    //administrator 
     address public admin;
-    //收税人
+    //The tax man 
     address public feeto;
     
-    //税率 s
+    //Rate
     uint public fee = 30;
     EcologyIncome public ecologyIncomecont;
-    //免税名单
+    //tax-exempt list
     mapping(address => bool) public freeUsers;
-    //存储着某个区块的票数
+    //A checkpoint for marking number of votes from a given block
     struct Checkpoint {
         uint32 fromBlock;
         uint96 votes;
     }
-    //存储某个地址在某次改动的区块号和票数
+    //A record of votes checkpoints for each account, by index
     mapping (address => mapping (uint32 => Checkpoint)) public checkpoints;
-    //存储某个地址发生了几次改动
+    // The number of checkpoints for each account
     mapping (address => uint32) public numCheckpoints;
     
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
@@ -50,39 +50,39 @@ contract RBT is ERC20{
         _;
     }
     /**
-    * @notice 设置管理者 
-    * @param manager 管理者
+    * @notice Setup the manager 
+    * @param manager the manager
     */
     function changeOwner(address manager) external _isOwner {
         admin = manager;
         emit AdminChange(msg.sender,manager);
     }
     /**
-    * @notice 设置税率
-    * @param value 税率
+    * @notice Set the rate
+    * @param value the rate
     */
     function modifyFee(uint value) external _isOwner {
         fee = value;
     }
     /**
-    * @notice 设置收税人
-    * @param guager 收税人
+    * @notice Set the tax man 
+    * @param guager tax man 
     */
     function changeFeeTo(address guager) external _isOwner {
         feeto = guager;
         emit FeetoChange(msg.sender,guager);
     }
     /**
-    * @notice 添加到免税名单
-    * @param userAddress 要添加的地址
+    * @notice Add to the tax-exempt list
+    * @param userAddress The address to add
     */
     function addFreeUser(address userAddress) public _isOwner {
         freeUsers[userAddress] = true;
         emit FreeUserChange(userAddress,true);
     }
     /**
-    * @notice 从免税名单移除
-    * @param userAddress 要移除的地址
+    * @notice Removed from the tax-exempt list
+    * @param userAddress The address to remove
     */
     function removeFreeUser(address userAddress) public _isOwner {
         freeUsers[userAddress] = false;
@@ -90,17 +90,18 @@ contract RBT is ERC20{
     }
     
     /**
-    * @notice 燃烧
-    * @param account 燃烧的账户
-    * @param amount 燃耗数额
+    * @notice Destroys `amount` tokens from `account`, reducing the
+    * total supply.
+    * @param account Burning account
+    * @param amount The amount of fuel
     */
     function burn(address account, uint256 amount) external _isOwner{
         _burn(account, amount);
     }
     /**
-    * @notice 转账
-    * @param recipient 接受人
-    * @param amount 转账数额
+    * @notice Moves `amount` tokens from the caller's account to `recipient`.
+    * @param recipient Accept people
+    * @param amount Amount to be transferred
     */
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
        
@@ -112,10 +113,12 @@ contract RBT is ERC20{
     
     
     /**
-    * @notice 授权转账
-    * @param sender 发送人
-    * @param recipient 接受人
-    * @param amount 转账数额
+    * @notice Moves `amount` tokens from `sender` to `recipient` using the
+    * allowance mechanism. `amount` is then deducted from the caller's allowance.
+    * @param sender The sender
+    * @param recipient Accept people
+    * @param amount Amount to be transferred
+    * @return Whether or not the transfer succeeded
     */
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         
@@ -126,18 +129,22 @@ contract RBT is ERC20{
         return true;
     }
     /**
-    * @notice 获取当前票数
-    * @param account 要查绚的地址
-    */
+     * @notice Gets the current votes balance for `account`
+     * @param account The address to get votes balance
+     * @return The number of current votes for `account`
+     */
     function getCurrentVotes(address account) external view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
+    
     /**
-    * @notice 获取某区块票数
-    * @param account 要查绚的地址
-    * @param blockNumber 要查绚的区块
-    */
+     * @notice Determine the prior number of votes for an account as of a block number
+     * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
+     * @param account The address of the account to check
+     * @param blockNumber The block number to get the vote balance at
+     * @return The number of votes the account had as of the given block
+     */
     function getPriorVotes(address account, uint blockNumber) public view returns (uint96) {
          require(blockNumber <= block.number, "RBT: not yet determined");
     
@@ -166,10 +173,10 @@ contract RBT is ERC20{
         return checkpoints[account][lower].votes;
      }
      /**
-    * @notice 转账
-    * @param sender 发送人
-    * @param recipient 接受人
-    * @param amount 转账数额
+    * @notice Moves tokens `amount` from `sender` to `recipient`.
+    * @param sender The sender
+    * @param recipient Accept people
+    * @param amount Amount to be transferred
     */
     function _transferRBT(address sender, address recipient, uint256 amount) internal {
           
@@ -195,9 +202,9 @@ contract RBT is ERC20{
         _devDelegates(sender, amount96);
     }
      /**
-    * @notice 添加票数
-    * @param dstRep 要添加票数的地址
-    * @param amount 要添加票数的数量
+    * @notice Add the votes
+    * @param dstRep The address to which the ticket is to be added
+    * @param amount The number of votes to add
     */
     function _addDelegates(address dstRep, uint96 amount) internal {
           
@@ -208,9 +215,9 @@ contract RBT is ERC20{
         
     }
     /**
-    * @notice 减少票数
-    * @param srcRep 要减少票数的地址
-    * @param amount 要减少票数的数量
+    * @notice Remove the votes
+    * @param srcRep The address to which the ticket is to be removed
+    * @param amount The number of votes to remove
     */
     function _devDelegates(address srcRep,  uint96 amount) internal {
           
@@ -220,11 +227,11 @@ contract RBT is ERC20{
         _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
     }
     /**
-    * @notice 更改票数
-    * @param delegatee 要更改票数的地址
-    * @param nCheckpoints 票数改变的次数
-    * @param oldVotes 旧的票数
-    * @param newVotes 新的票数
+    * @notice Change the number
+    * @param delegatee To change the address of the vote
+    * @param nCheckpoints The number of times the vote was changed
+    * @param oldVotes The old number
+    * @param newVotes The new number
     */
     function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint96 oldVotes, uint96 newVotes) internal {
         uint32 blockNumber = safe32(block.number, "RBT: block number exceeds 32 bits");
