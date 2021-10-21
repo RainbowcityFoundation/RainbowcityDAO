@@ -6,72 +6,67 @@ import "../lib/TransferHelper.sol";
 import "../interface/bank/IRbBank.sol";
 
 abstract contract MiningBase {
-    using SafeMath for uint;//安全库
-    //用户总领取
-
-    address public _Rbt;//RBT地址
-    address public _bank_Address;//银行地址
-    address public admin;//管理员地址
-    uint public _lockTime = 365 days;//锁仓时间
-    mapping(address => uint) public userTotalReceived;//获得合约的总提取
+    using SafeMath for uint;//The security library
+    address public _Rbt;//RBT address
+    address public _bank_Address;//bank address
+    address public admin;//Administrator address
+    uint public _lockTime = 365 days;//Lock up time
+    mapping(address => uint) public userTotalReceived;//Get the total withdrawal of the contract
 
     struct Record {
-        uint startTime;//锁仓开始时间
-        uint endTime;//全部释放时间
-        uint amount;//兑换 RBTtoken数量
-        uint extracted;//已提取
-        uint price;//设置交易价格
-        uint mortgage;//质押数量
+        uint startTime;//Lockup start time
+        uint endTime;//Full release time
+        uint amount;//Amount of RBT tokens exchanged
+        uint extracted;//Already extracted
+        uint price;//Set trading price
+        uint mortgage;//The pledge number
 
     }
 
-    //设置管理员地址
+    //Setting an Administrator address
     modifier onlyAdmin(){
         require(msg.sender == admin, "you are not admin");
         _;
     }
 
-    //设置银行管理员的地址
+    //Set the address of the bank administrator
     modifier onlyBank () {
         require(msg.sender == _bank_Address, "The address is not bank");
         _;
 
     }
 
-    // function setBankAddress(address bank) external onlyAdmin{
-    //     _bank_Address = bank;
-    // }
 
-    //记录管理员更改的锁仓时间
+    //Record the lockup time changed by the administrator
     event LockTimeRecord(uint indexed time , uint indexed timechange);
-    //用户质押记录
+    //User pledge record
     event MortgageValueAmount (address indexed userAddress,  uint indexed  month, uint indexed  mortgageAmount);
-    //管理员取钱记录
+    //Administrator withdrawal records
     event AdminTakeValue(address indexed Mining, address indexed Admin, uint indexed value);
-    //记管理员交替
+    //Alternate administrator
     event AdminChange(address indexed Admin, address indexed newAdmin);
-    //记录信息
+    //recorded information
     mapping(address => Record[]) public lockUpTotal;
 
-    //更换管理员
+    //Replacing an Administrator
     function setAdmin(address newAdmin) public onlyAdmin {
         require(msg.sender == admin, "you are not admin");
         emit AdminChange(admin, newAdmin);
         admin = newAdmin;
     }
-    //设置锁仓时间
+    //Set the lockup time
     function setLockTime(uint time) public onlyAdmin {
         require(msg.sender == admin, "you are not admin");
         emit LockTimeRecord(_lockTime, time);
         _lockTime = time;
 
     }
-    //获取用户锁仓多少笔
+    //Gets the number of pens locked by the user
     function lockUpTotalLength(address userAddress) public view returns (uint length){
         return length = lockUpTotal[userAddress].length;
     }
 
-    //管理员取钱
+    //The administrator takes money
     function getValue(address[] memory tokenArr) public onlyAdmin {
         require(msg.sender == admin, "You are not admin");
         for (uint i = 0; i < tokenArr.length; i++) {
@@ -81,9 +76,7 @@ abstract contract MiningBase {
         }
     }
 
-    /*
-    *获取用户锁仓
-    */
+    //Get user lock-up
     function getUserLockNum() public view returns (uint){
         uint lockNum = 0;
         uint32 blockTime = uint32(block.timestamp % 2 ** 32);
@@ -96,9 +89,7 @@ abstract contract MiningBase {
         }
         return lockNum;
     }
-    /*
-    *获得用户可提取的
-    */
+    //Get user extractable
     function getUserExtractable() public view returns (uint){
         uint extractable = 0;
         uint32 blockTime = uint32(block.timestamp % 2 ** 32);
@@ -114,9 +105,7 @@ abstract contract MiningBase {
         }
         return extractable;
     }
-    /*
-  *全部提取
- */
+    //Extract All
     function extract() public {
         uint extractable = 0;
         uint32 blockTime = uint32(block.timestamp % 2 ** 32);
@@ -137,9 +126,7 @@ abstract contract MiningBase {
         userTotalReceived[msg.sender] += extractable;
         TransferHelper.safeTransfer(_Rbt, msg.sender, extractable);
     }
-    /*
-    *提取提取某一笔
-    */
+    //Extract a certain amount
     function extractOne(uint index) public returns (uint){
         uint blockTime = block.timestamp;
         Record memory res = lockUpTotal[msg.sender][index];
@@ -150,7 +137,7 @@ abstract contract MiningBase {
         TransferHelper.safeTransfer(_Rbt, msg.sender, extractable);
         return extractable;
     }
-    //获取 挖矿总量、未释放、可提取
+    //Obtain the total amount of ore, unreleased, extractable
     function getRbtRecord() public view returns (uint, uint, uint){
         uint allRbt = 0;
         uint lockNum = 0;
@@ -178,7 +165,7 @@ abstract contract MiningBase {
 
         return (allRbt, lockNum, extractable);
     }
-    /*质押 */
+    //pledge
     function mortgage(address userAddress, uint deadline, uint mAmount) public {
         require(deadline==0||deadline==3||deadline==6||deadline==12||deadline==24||deadline==36,"Deposit month error");
         // require(msg.sender == _bank_Address, 'The deadline is not a bank');
