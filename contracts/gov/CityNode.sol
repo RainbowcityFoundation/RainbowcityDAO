@@ -23,18 +23,18 @@ import "../interface/token721/IGovernance721.sol";
 contract CityNode is ICityNode,CoreRef,IParliament,VoteIdRef,IBlockNumber {
 
     using SafeMath for uint256;
-  
+
     using EnumerableSet for EnumerableSet.AddressSet;
 
     struct parliamentData {
-        EnumerableSet.AddressSet parliament; //多签
+        EnumerableSet.AddressSet parliament; //parliament
         uint expireTime;
-        bool votePeriod; //是否在多签投票期间
-        uint impeachIndex; //弹劾在哪个序号上
+        bool votePeriod; //Is it during the voting period
+        uint impeachIndex; //On which serial number is impeachment
     }
 
     struct memberData {
-        EnumerableSet.AddressSet member; //成员
+        EnumerableSet.AddressSet member; //node's member
         mapping(address => uint) joinTime;
     }
 
@@ -49,9 +49,9 @@ contract CityNode is ICityNode,CoreRef,IParliament,VoteIdRef,IBlockNumber {
         string name;
         bool active;
         bool firstActive;
-        bool votePeriod;//是否在投票期间
-        uint ElfUperCount; //精灵以上数量
-        address cfm; //资金管理合约
+        bool votePeriod;//Is it during the voting period
+        uint ElfUperCount; //Quantity above Elf
+        address cfm; //Fund management contract
         uint proposalBlockNumber;
         uint cityId;
     }
@@ -64,40 +64,40 @@ contract CityNode is ICityNode,CoreRef,IParliament,VoteIdRef,IBlockNumber {
         address account;
         uint tickets;
     }
-    //城市节点数量
+    //Number of city nodes
     uint public cityNodeCount;
-    //投票合约的地址
+    //Address of voting contract
     address public voteAddr;
-    //用户在哪个节点
+    //Which node is the user on
     mapping(address => uint) public  userNode; //user in where node
 
-    //节点详细信息
+    //Node details
     mapping(uint => cityNode) private cityNodes;
 
-    //在激活之前精灵以上的人
+    //People above Elf before activation
     mapping(uint => address[]) public beforeActiveElf;
-    //竞选管理员投票记录
+    //Campaign manager voting records
     mapping(uint => mapping(uint => mapping(address => uint))) public voteRecords;
 
-    //用户申请竞选管理员记录
+    //User application administrator record
     mapping(uint => mapping(uint => applyRecord[])) public userApplyRecords;
 
     mapping(uint => mapping(uint => parliamentApply[])) public parliamentApplyRecords;
 
-    //节点中的当前多签投票ID记录
+    //Current multi sign voting ID record in node
     mapping(uint => uint) public nodeParliamentVoteId;
 
-    mapping(uint => uint[]) public cityGovNodes; //城市治理委员会所包含的城市节点ID数组
+    mapping(uint => uint[]) public cityGovNodes; //An array of city node IDs contained by the city governance committee
 
-    mapping(uint => mapping(uint =>mapping(address => bool))) public parliamentUp; //弹劾待上位验证
+    mapping(uint => mapping(uint =>mapping(address => bool))) public parliamentUp; //Impeachment pending verification
     address public cityGovernanceAddr;
 
 
 
     IGovernance721 public Gov721;
-INewFundManagement public NewFundManagement;
+    INewFundManagement public NewFundManagement;
 
-    //城市节点验证城市所需公钥地址
+    //The city node verifies the public key address required by the city
     bytes32  private  secret;
 
     //    mapping(uint => mapping(uint => uint)) public impeachIndex;
@@ -110,25 +110,25 @@ INewFundManagement public NewFundManagement;
         require(sender == voteAddr, "sender is not vote");
         _;
     }
-    
-    
+
+
 
 
     constructor(address core,address voteIdAddr) public  CoreRef(core)  VoteIdRef(voteIdAddr) {}
 
     /*
-          @dev 验证某个节点是否存在
-          @params nodeId 节点ID
-          @return  bool 存在返还true
+          @dev Verify that a node exists
+          @params nodeId
+          @return  bool
       */
     function existsCityNode(uint nodeId) public view override returns (bool){
         return cityNodes[nodeId].id != 0;
     }
     /*
-          @dev 验证是否是存在节点里
-          @params nodeId 节点ID
-          @params sender 调用者
-          @return  bool 存在返还true
+          @dev Verify whether it exists in the node
+          @params nodeId
+          @params sender caller
+          @return  bool
       */
     function inNode(uint nodeId, address sender) public view override returns (bool) {
         //        require(userNode[sender] == nodeId, "not in");
@@ -150,16 +150,16 @@ INewFundManagement public NewFundManagement;
         NewFundManagement = INewFundManagement(addr);
     }
     /*
-      @dev 获取当前节点的投票所处区块
+      @dev Get the voting block of the current node
   */
     function getBlockNumber(uint id) external override view returns(uint) {
         return cityNodes[id].proposalBlockNumber;
     }
 
     /*
-          @dev 获取节点详细信息
-          @params nodeId 节点ID
-          @return 节点详细信息
+          @dev Get node details
+          @params nodeId
+          @return node details
       */
     function getCityNodeInfo(uint nodeId) external view override returns (bool, uint, address, uint) {
         return (cityNodes[nodeId].votePeriod, cityNodes[nodeId].expireTime, cityNodes[nodeId].manager, cityNodes[nodeId].voteId);
@@ -176,8 +176,8 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
-       @dev 加入节点
-       @params tokenId 城市节点令牌ID
+       @dev create node
+       @params tokenId City node token ID
    */
     function createNode(uint tokenId,string memory name, bytes32  hash,uint y,uint a) external override {
         //todo for test close
@@ -207,48 +207,23 @@ INewFundManagement public NewFundManagement;
         emit cityNodeCreate(c.id, msg.sender, block.timestamp);
     }
 
-    // function verifySign(bytes32  hash,uint8 v, bytes32 r, bytes32 s) public view returns (address){
-  
-    //     // bytes32  r = bytesToBytes32(slice(signedString, 0, 32));
-    //     // bytes32  s = bytesToBytes32(slice(signedString, 32, 32));
-    //     // byte  v1 = slice(signedString, 64, 1)[0];
-    //     // uint8 v = uint8(v1) + 27;
-    //     return ecrecoverDecode(hash, r, s, v);
-    // }
-
-    //使用ecrecover恢复公匙
-//    function ecrecoverDecode(bytes32  hash,bytes32 r, bytes32 s, uint8 v) public view returns (address addr){
-//       addr = ecrecover(hash, v, r, s);
-//    }
-
-      //function sliceBytes(string)
-
-    //将原始数据按段切割出来指定长度
-    // function slice(bytes memory data, uint start, uint len) returns (bytes){
-    //     bytes memory b = new bytes(len);
-    
-    //     for(uint i = 0; i < len; i++){
-    //       b[i] = data[i + start];
-    //     }
-    //     return b;
-    // }
     /*
-       @dev 加入节点
-       @params nodeId 节点ID
+       @dev Join node
+       @params nodeId
       */
     function joinNode(uint nodeId) external override {
         require(userNode[msg.sender] == 0, 'user  exists node');
         require(existsCityNode(nodeId), 'not exists this node');
-        //不存在
+        //non-existent
         cityNode storage cn = cityNodes[nodeId];
         cn.members.member.add(msg.sender);
         cn.members.joinTime[msg.sender] = block.timestamp;
-        //todo 判断此人身份是否精灵以及以上
+        //todo Determine whether this person's identity is Elf or above
         userNode[msg.sender] = nodeId;
         bool isElf = true;
         if (isElf) {
             cn.ElfUperCount++;
-            //没有激活过
+            //Not activated
             if (cn.firstActive == false && cn.ElfUperCount <= 12) {
                 beforeActiveElf[nodeId].push(msg.sender);
             }
@@ -258,14 +233,14 @@ INewFundManagement public NewFundManagement;
                 //todo for test close
                  cn.expireTime = block.timestamp + 90 days;
 //                 cn.expireTime = 0;
-                //管理员90天到期
-                //12个多签首次上任
+                //Administrator due 90 days
+                //More than 12 parliament took office for the first time
                 for (uint i = 0; i < beforeActiveElf[nodeId].length; i++) {
                     cn.parliaments.parliament.add(beforeActiveElf[nodeId][i]);
                     //todo for test close
                      cn.parliaments.expireTime = block.timestamp + 30 days;
 //                    cn.parliaments.expireTime = 0;
-                    //多签30天到期
+                    //parliament 30 days overdue
                     cn.parliaments.votePeriod = false;
                     cn.parliaments.impeachIndex = 11;
                 }
@@ -274,26 +249,26 @@ INewFundManagement public NewFundManagement;
     }
 
 
-    /*
-@dev 退出节点
-*/
+        /*
+    @dev quitNode
+    */
     function quitNode() external override {
         require(userNode[msg.sender] != 0, 'user not in  node');
         cityNode storage cn = cityNodes[userNode[msg.sender]];
         cn.members.member.remove(msg.sender);
         cn.members.joinTime[msg.sender] == 0;
-        //此人是管理员，退出节点，需要开启竞选
+        //This person is an administrator. To exit the node, you need to start the campaign
         if(msg.sender == cn.manager) {
             cn.manager =  address(0);
             cn.voteId = IVoteId(voteIdAddress).incrVoteId();
             cn.proposalBlockNumber = block.number;
             cn.votePeriod = true;
         }
-        //todo 判断此人身份是否精灵以及以上
+        //todo Determine whether this person's identity is Elf or above
         bool isElf = true;
         if (isElf) {
             cn.ElfUperCount--;
-            //如果是多签，删除多签
+            //If it is parliament, delete the parliament
             if (cn.parliaments.parliament.contains(msg.sender)) {
                 cn.parliaments.parliament.remove(msg.sender);
             }
@@ -309,8 +284,8 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
-    @dev 延续管理员
-    @params nodeId 节点ID
+    @dev Continuation administrator
+    @params nodeId
     */
     function lengthen(uint nodeId,uint tokenId) external override {
         require(inNode(nodeId, msg.sender), 'not in node');
@@ -328,8 +303,8 @@ INewFundManagement public NewFundManagement;
 
 
     /*
-    @dev 激活竞选  需要给激活人一定的奖励
-    @params nodeId 节点ID
+    @dev Activating the campaign requires giving certain rewards to the activator
+    @params nodeId
     */
     function activeToCampaign(uint nodeId) external override {
         require(inNode(nodeId, msg.sender), 'not in node');
@@ -342,9 +317,9 @@ INewFundManagement public NewFundManagement;
         cn.votePeriod = true;
     }
     /*
-  @dev /申请竞选管理员
-  @params nodeId 节点ID
-  @params tokenId 城市节点令牌id
+  @dev Apply for campaign administrator
+  @params nodeId
+  @params tokenId
 
   */
     function applyManager(uint nodeId, uint tokenId) external override {
@@ -367,11 +342,11 @@ INewFundManagement public NewFundManagement;
 
 
     /*
-    @dev /验证是否某人参加了竞选
-    @params nodeId 节点ID
-    @params voteId 当前节点的投票ID
-    @params applicant 验证人的Id
-    @return bool 存在返还true
+    @dev Verify whether someone is running for office
+    @params nodeId
+    @params voteId Voting ID of the current node
+    @params applicant ID of the verifier
+    @return bool
     */
     function getExistsApplyUsers(uint nodeId, uint voteId, address applicant) public override view returns (bool){
         for (uint i = 0; i < userApplyRecords[nodeId][voteId].length; i++) {
@@ -384,20 +359,20 @@ INewFundManagement public NewFundManagement;
 
 
     /*
-    @dev /管理员竞选投票
-    @params nodeId 节点ID
-    @params voteId 当前节点的投票ID
-    @params user 投给谁
-    @params tickets 投几票
+    @dev Administrator campaign voting
+    @params nodeId
+    @params voteId voteId Voting ID of the current node
+    @params user People voted
+    @params tickets
     */
     function voteToManager(uint nodeId, uint voteId, address user, uint tickets) external override _onlyVote(msg.sender) {
         voteRecords[nodeId][voteId][user] += tickets;
     }
 
     /*
-    @dev 结束管理员竞选投票
-    @params nodeId 节点ID
-    @params voteId 当前节点的投票ID
+    @dev End administrator campaign voting
+    @params nodeId
+    @params voteId voteId voteId Voting ID of the current node
 
     */
     function endToManager(uint nodeId, uint voteId) external override _onlyVote(msg.sender) {
@@ -413,16 +388,16 @@ INewFundManagement public NewFundManagement;
         for (uint i = 0; i < userApplyRecords[nodeId][voteId].length; i++) {
             address user = userApplyRecords[nodeId][voteId][i].account;
             if (i != index) {
-                //todo 721token转账 返还用户的token
+                //todo 721token transfer return user's token
             }
         }
         // cn.voteId++;
     }
     /*
-        @dev 获取管理员竞选一轮投票中 截止当前的胜者
-        @params nodeId 节点ID
-        @params voteId 当前节点的投票ID
-        @return 获胜者的地址 以及 索引
+        @dev Gets the current winner of the administrator's campaign round
+        @params nodeId
+        @params voteId  Voting ID of the current node
+        @return Winner's address and index
     */
     function getWinner(uint nodeId, uint voteId) public view returns (address, uint){
         uint max = 1;
@@ -440,15 +415,15 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
-        @dev 激活竞选议会成员
-        @params nodeId 节点ID
+        @dev Activate the campaign for parliamentary membership
+        @params nodeId
     */
     function activeToParliaments(uint nodeId) external {
         require(inNode(nodeId, msg.sender), 'not in node');
         cityNode storage cn = cityNodes[nodeId];
         require(cn.parliaments.expireTime < block.timestamp);
         require(cn.parliaments.votePeriod == false);
-        //将之前的删掉
+        //Delete the previous
         uint parliamentLength = cn.parliaments.parliament.length();
         for (uint i = 0; i < parliamentLength; i++) {
             address user = cn.parliaments.parliament.at(i);
@@ -457,28 +432,28 @@ INewFundManagement public NewFundManagement;
         cn.parliaments.votePeriod = true;
         nodeParliamentVoteId[nodeId] =  IVoteId(voteIdAddress).incrVoteId();
     }
-    
+
     function getParliamentLength(uint id) public view returns(uint){
           cityNode storage cn = cityNodes[id];
           return cn.parliaments.parliament.length();
     }
-    
+
     function getParliamentByIndex(uint id,uint i) public view returns(address){
          cityNode storage cn = cityNodes[id];
          return cn.parliaments.parliament.at(i);
     }
 
-    /*
-@dev /申请竞选多签
-@params nodeId 节点ID
+        /*
+    @dev Apply for multiple signatures
+    @params nodeId
 
-*/
+    */
     function applyParliament(uint nodeId) external override {
         require(inNode(nodeId, msg.sender), 'not in node');
-        //todo 判断是否是社区精灵及以上
+        //todo Judge whether it is a community Elf or above
 
-     
-        
+
+
         cityNode storage cn = cityNodes[nodeId];
 
         TransferHelper.safeTransferFrom(address(Rbt()),msg.sender,cn.cfm,1000 * 10 ** 18);
@@ -493,9 +468,9 @@ INewFundManagement public NewFundManagement;
 
         _setParliamentApply(nodeId,nodeParliamentVoteId[nodeId],msg.sender,0);
     }
-    
+
          /*
-        @dev 设置申请信息
+        @dev Set application information
     */
     function _setParliamentApply(uint id, uint voteId,address sender,uint tickets) internal  {
         parliamentApply memory ar = parliamentApply({
@@ -505,22 +480,13 @@ INewFundManagement public NewFundManagement;
         parliamentApplyRecords[id][voteId].push(ar);
     }
 
-    /*
-    @dev /多签竞选投票
-    @params nodeId 节点ID
-    @params voteId 当前的投票ID
-    @params user 投给谁
-    @params tickets 投几票
-    */
-    // function voteToParliament(uint nodeId,uint voteId,address user,uint tickets) external override _onlyVote(msg.sender) {
-    //     voteRecords[nodeId][voteId][user]+= tickets;
-    // }
+
 
     /*
-    @dev /获取竞选多签的人数以及信息
-    @params nodeId 节点ID
-    @params voteId 当前的投票ID
-    @return 人数
+    @dev Get the number of campaign signatures and information
+    @params nodeId
+    @params voteId Voting ID of the current node
+    @return Number of people
     */
     function getApplyParliament(uint nodeId, uint voteId) public view override returns (uint){
         uint length = parliamentApplyRecords[nodeId][nodeParliamentVoteId[nodeId]].length;
@@ -528,8 +494,8 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
-  @dev /获取当前duoqian的竞选ID
-  @params nodeId 节点ID
+  @dev Get the campaign ID of the current parliament
+  @params nodeId
   @return ID
   */
     function getApplyParliamentVoteId(uint nodeId) external view override returns (uint){
@@ -537,11 +503,11 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
-  @dev /多签竞选投票
-  @params nodeId 节点ID
-  @params voteId 当前节点的投票ID
-  @params user 投给谁
-  @params tickets 投几票
+  @dev parliament campaign voting
+  @params nodeId
+  @params voteId Voting ID of the current node
+  @params user to user
+  @params tickets
   */
 
     function voteToParliament(uint nodeId, uint voteId, address user, uint tickets) external override _onlyVote(msg.sender) {
@@ -559,9 +525,9 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
- @dev 结束管理员竞选投票
- @params nodeId 节点ID
- @params voteId 当前节点的投票ID
+ @dev End administrator campaign voting
+ @params nodeId
+ @params voteId Voting ID of the current node
 
  */
 
@@ -571,10 +537,10 @@ INewFundManagement public NewFundManagement;
              require(length >=15 ,'not enough people');
         require( cn.parliaments.votePeriod == true);
         _quickSort(parliamentApplyRecords[nodeId][nodeParliamentVoteId[nodeId]], 0, length);
-      
+
         cn.parliaments.votePeriod = false;
         cn.parliaments.expireTime = block.timestamp + 30 days;
-        //多签30天到期
+        // parliaments 30 days overdue
         for (uint i = 0; i < 12; i++) {
             cn.parliaments.parliament.add(parliamentApplyRecords[nodeId][nodeParliamentVoteId[nodeId]][i].account);
         }
@@ -588,10 +554,10 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
-     @dev 设置议会成员
-     @params nodeid 节点id
-     @params voteId 哪次投票产生的
-     @params index 成员序号
+     @dev Setting up members of Parliament
+     @params nodeid
+     @params voteId Which vote
+     @params index Member serial number
     */
     function setParliament(uint nodeId, uint voteId, uint index) external override _onlyVote(msg.sender) {
         address user = parliamentApplyRecords[nodeId][voteId][index].account;
@@ -601,7 +567,7 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
-        @dev顺势上位的那个交钱再上
+        @dev The one who takes advantage of the situation will pay again
     */
     function parliamentTakeOffice(uint nodeId) public {
         cityNode storage cn = cityNodes[nodeId];
@@ -613,9 +579,9 @@ INewFundManagement public NewFundManagement;
 
 
     /*
-         @dev 删除某个议会成员
-         @params nodeid 节点id
-         @params user 议会成员地址
+         @dev Delete a member of Parliament
+         @params nodeid
+         @params user Address of members of Parliament
 
      */
     function removeParliament(uint nodeId, address user) external override _onlyVote(msg.sender) {
@@ -623,25 +589,25 @@ INewFundManagement public NewFundManagement;
     }
 
     /*
-          @dev 查看议会是否存在某人
-          @params 节点id
-          @return 是true 否 false
+          @dev See if someone exists in Parliament
+          @params nodeId
+          @return bool
       */
     function hasParliament(uint nodeId, address user) external override view returns (bool){
         return cityNodes[nodeId].parliaments.parliament.contains(user);
     }
 
     /*
-        @dev 获取议会的详情
-        @params 节点id
-        @return 到期时间，是否在投票期，弹劾序列
+        @dev Get details of Parliament
+        @params nodeId
+        @return Expiration time, whether it is in the voting period, impeachment sequence
     */
     function parliamentInfo(uint nodeId) external override view returns (uint, bool, uint){
         return (cityNodes[nodeId].parliaments.expireTime, cityNodes[nodeId].parliaments.votePeriod, cityNodes[nodeId].parliaments.impeachIndex);
     }
 
     /*
-        @dev 领取属于自己的分红
+        @dev Receive their own dividends
     */
     function receiveReward(uint nodeId,address token,uint amount) external  {
           address cfm = cityNodes[nodeId].cfm;
@@ -654,9 +620,9 @@ INewFundManagement public NewFundManagement;
 
 
     /*
-        @dev 弹劾的赏金发放
-        @params nodeId 节点ID
-        @params voteId 当前节点的投票ID
+        @dev Payment of impeachment reward
+        @params nodeId
+        @params voteId Voting ID of the current node
     */
 
     function impeachExtract(uint nodeId, address token, uint amount, address receiver, uint impeachType) external override _onlyVote(msg.sender) {
@@ -668,9 +634,9 @@ INewFundManagement public NewFundManagement;
 
 
     /*
-        @dev 设置节点管理员，通过投票来设置
-        @params 节点ID
-        @params 节点管理员
+        @dev Set the node administrator by voting
+        @params nodeId
+        @params manager
 
     */
     function setManagerInfo(uint nodeId, address manager) external override _onlyVote(msg.sender) {
@@ -683,10 +649,10 @@ INewFundManagement public NewFundManagement;
 
 
     /*
-        @dev 对议会产生的投票结果进行快速排序 按票数从大到小
-        @params arr 议会申请的数组
-        @params left 左边
-        @params right 右边
+        @dev Quickly sort the voting results produced by Parliament from large to small
+        @params arr Array of parliamentary applications
+        @params left   Array left
+        @params right  Array right
     */
 
     function _quickSort(parliamentApply[] storage arr, uint left, uint right) internal {
@@ -708,11 +674,4 @@ INewFundManagement public NewFundManagement;
         if (i < right)
             _quickSort(arr, i, right);
     }
-
-    //bytes转换为bytes32
-    // function bytesToBytes32(bytes memory source) public returns (bytes32 result) {
-    //     assembly {
-    //         result := mload(add(source, 32))
-    //     }
-    // }
 }
