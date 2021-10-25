@@ -4,27 +4,27 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../interface/mining/IRbConsensus.sol";
 import "../lib/TransferHelper.sol";
 import "./MiningBase.sol";
-//贡献挖矿
+//Contribute to mining
 
 contract RbContribution is MiningBase {
-    using SafeMath for uint;//安全库
+    using SafeMath for uint;//Security library
 
-    //已经挖出：用于展示
+    //Already dug out: for display
     uint public digOutAmount;
-    //全部领取：用于展示
+    //Collect all: for display
     uint public allReceived;
-    //RBD地址
+    //RBD address
     address public _RBD;
-    //共识合约地址
+    //Consensus contract address
     address public rbConsensus;
-    //银行地址
+    //Bank address
     address public bankAddress;
-    //补充信息
+    //Additional information
     uint public transferPrice = 1;
-    //兑换记录每一笔信息
+    //Exchange records for every piece of information
     event PurchaseRecord (address  User , uint indexed tokenAmount , uint indexed rbtAmount ,address indexed tokenAddress);
 
-    //协调器参数
+    //Coordinator parameters
     constructor(
         address rbd,
         address rbt,
@@ -37,16 +37,12 @@ contract RbContribution is MiningBase {
         bankAddress = bank;
     }
 
-    //设置共识合约地址：兑换价格需要在共识合约里取
+    //Set the consensus contract address: the exchange price needs to be taken in the consensus contract
     function setrbConsensus(address addr) public onlyAdmin {
         rbConsensus = addr;
     }
 
-    /*
-    *   RBD --> RBT 兑换
-    */
-
-
+    //RBD --> RBT exchange
     function getRBT(uint amount) public {
         uint RbtransferPrice = IRbConsensus(rbConsensus).getRbtPrice();
         uint amountRbt = amount.mul(100).div(RbtransferPrice);

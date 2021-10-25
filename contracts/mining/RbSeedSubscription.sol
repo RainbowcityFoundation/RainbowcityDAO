@@ -6,32 +6,32 @@ import "../interface/mining/IOpenOracle.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./MiningBase.sol";
 
-//种子轮认购
+//Seed round subscription
 contract RbSeedSubscription is MiningBase {
-    //安全库
+    //Security library
     using SafeMath for uint;
-    //RBT地址
+    //RBT address
     address public _RBT_SEED;
-    //预言机地址来源
+    //Source of oracle address
     address public source;
-    //剩余认购数量
+    //Remaining subscription quantity
     uint public isSubSeedsLeftNum;
     uint public totalAmount = 30000000 *10 **18;
-    //已经挖出
+    //Already dug out
     uint public digOutAmount;
-    //映射可认购代币
+    //Mapping subscribeable tokens
     mapping(address => bool) public tokenAllow;
-    //记录认购
+    //Record subscription
     mapping(address => recordRbSeedSubscription[]) public  RbSeedSubscriptionRecord;
-    //购买记录每一笔信息
+    //Purchase record every piece of information
     event PurchaseRecord(address user , uint indexed tokenAmount, uint indexed rbtSeedAmount, address indexed tokenAddress);
-    //认购参数
+    //Subscription parameters
     struct recordRbSeedSubscription {
-        uint curRate;//rbtseed单价
-        uint time;//兑换时间方便查询
-        uint amount;//兑换数量
+        uint curRate;//rbtseed unit price
+        uint time;//Convenient to check the exchange time
+        uint amount;//Number of exchanges
     }
-    //协调器传参
+    //Coordinator parameter transfer
     constructor(
         address seed,
         address Aadmin
@@ -42,23 +42,23 @@ contract RbSeedSubscription is MiningBase {
         source = 0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC;
 
     }
-    //本轮认购剩余金额（达到1_000_000 提高价格）
+    //The remaining amount of this round of subscription (to 1_000_000 to increase the price)
     uint public curRate = 100;
-    //每轮数量
+    //Number per round
     uint public account = 1000000 * 10 ** 18;
 
-    //预言机获取价格
+    //The oracle gets the price
     function getPrice(string memory K) public view returns (uint64 a, uint64 b){
 
         (a, b) = IOpenOracle(0x00c4770D3Feb38ad07f879Abd96619FBdeb00520).get(source, K);
     }
 
     bool public turnOnOff;
-    //添加代币的开关
+    //Switch to add tokens
     function setTurnOnOff(bool turnType) public onlyAdmin {
         turnOnOff = turnType;
     }
-    //管理员设置认购代币
+    //The administrator sets up subscription tokens
     function setTokenAllow(address[] memory allowToken) public onlyAdmin {
         require(turnOnOff == false, "0");
         for (uint i = 0; i < allowToken.length; i++) {
@@ -68,7 +68,7 @@ contract RbSeedSubscription is MiningBase {
         }
     }
 
-    //认购RBTSEED
+    //Subscribe to RBTSEED
     function seedSubscription(uint value, string memory tokenName, address token) public {
 
         require(tokenAllow[token] == true, "the token not allow");
@@ -97,7 +97,7 @@ contract RbSeedSubscription is MiningBase {
 
         emit PurchaseRecord(msg.sender, value, rbtSeedAmount, token);
     }
-    //获得记录长度
+    //Get record length
     function getRecordsLength() public view returns (uint){
         return RbSeedSubscriptionRecord[msg.sender].length;
     }

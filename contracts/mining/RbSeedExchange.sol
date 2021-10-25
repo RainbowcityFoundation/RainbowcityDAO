@@ -5,20 +5,20 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../lib/TransferHelper.sol";
 import "./MiningBase.sol";
 
-//种子轮兑换
+//Seed round exchange
 contract RbSeedExchange is MiningBase {
-    using SafeMath for uint;//安全库
-    //累计挖出总量 ,这里是RBT展示查询数据
+    using SafeMath for uint;//Security library
+    //Cumulative total amount of mining, here is RBT display query data
     uint public digOutAmount;
-    //累计已领 ，这里是RBT展示查询数据
+    //Accumulated received, here is the RBT display query data
     uint public allReceived;
-    //兑换记录每一笔信息
+    //Exchange records for every piece of information
     event PurchaseRecord (address  User , uint indexed tokenAmount , uint indexed rbtAmount ,address indexed tokenAddress);
 
-    //SEED地址
+    //SEED address
     address private _RBT_SEED;
     uint public exchangeRate;
-    //协调器传参
+    //Coordinator parameter transfer
     constructor (
         address seed,
         address rbt,
@@ -28,15 +28,13 @@ contract RbSeedExchange is MiningBase {
         _Rbt = rbt;
         admin = Aadmin;
     }
-    //银行地址
+    //Bank address
     address private BANK_ADDRESS;
-    /*设置兑换率 */
+    //Set exchange rate
     function setExchangeRate(uint rate) public onlyAdmin {
         exchangeRate = rate;
     }
-    /*
-    *   RBTSEED --> RBT 兑换
-    */
+    //RBTSEED --> RBT exchange
     function exchange(uint value) public {
 
         TransferHelper.safeTransferFrom(_RBT_SEED, msg.sender, address(this), value);

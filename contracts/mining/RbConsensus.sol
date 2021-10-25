@@ -8,34 +8,35 @@ import "../interface/IRbtVip.sol";
 import "./MiningBase.sol";
 
 
-//共识挖矿
+//Consensus mining
 contract RbConsensus is MiningBase {
 
-    using SafeMath for uint;//安全库
+    using SafeMath for uint;//Security library
     uint public transferOnePrice;
-    uint public transferPrice;//交易价格
-    uint public cumulRbt;//每轮总量
-    address public source;//预言机来源
-    address public vipAddress;//vip地址
+    uint public transferPrice;//Trading price
+    uint public cumulRbt;//Total amount per round
+    address public source;//Source of oracle
+    address public vipAddress;//vip address
 
-    mapping(address => bool) public tokenAllow;//映射可认购代币
+    mapping(address => bool) public tokenAllow;//Mapping subscribeable tokens
 
-    //个人记录
+    //Personal records
     mapping(address => myRecord[]) public myRecords;
-    //各个层级
+    //All levels
     mapping(address => mapping(uint => uint)) public levelMining;
-    //累计挖出总量 ,这里是RBT展示查询数据
+    //Cumulative total amount of mining, here is RBT display query data
     uint public digOutAmount;
-    //累计已领 ，这里是RBT展示查询数据
+    //Accumulated received, here is the RBT display query data
     uint public allReceived;
-    //购买记录每一笔信息
-    event PurchaseRecord(address  user ,  uint indexed tokenAmount, uint indexed rbtAmount, address indexed tokenAddress);
+    //Purchase record every piece of information
+    event PurchaseRecord(address user, uint indexed tokenAmount, uint indexed rbtAmount, address indexed tokenAddress);
+
     struct myRecord {
-        uint received;   //我的已领
-        uint myDigOutAmount;//我的累计挖出
+        uint received;   //My received
+        uint myDigOutAmount;//My cumulative dug out
     }
 
-    //协调器需传递的参数
+    //Parameters to be passed by the coordinator
     constructor(
 
         address rbt,
@@ -55,34 +56,34 @@ contract RbConsensus is MiningBase {
     }
 
 
-    //交易价格设定
+    //Transaction price setting
     function setPrice(uint price) public onlyAdmin {
         transferPrice = price;
     }
 
-    function getRbtPrice() public view returns(uint){
+    function getRbtPrice() public view returns (uint){
         return transferPrice;
     }
 
-    //获取用户总领取
+    //Get user total receipt
     function getUserTotalReceived(address addr) public view returns (uint){
         return userTotalReceived[addr];
     }
-    //获取用户的获取的数量
+    //Acquired the number of user acquisitions
     function getUserAmount(address sender) public view returns (uint) {
         return userTotalReceived[sender];
     }
-    //获取用户层级
+    //Get user level
     function getLevelAmount(address sender, uint level) public view returns (uint){
         return levelMining[sender][level];
     }
 
-    //预言机获取获取价格
+    //The oracle gets the price
     function getPrice(string memory K) public view returns (uint64 a, uint64 b){
 
         (a, b) = IOpenOracle("0xdfd717f4e942931c98053d54qwf803a1b52838db").get(source, K);
     }
-    //递归查询挖矿等级
+    //Recursive query mining level
     function _recursionAddAmount(address sender, uint amount, uint i) internal {
         while (i <= 7) {
             address referUser;
@@ -95,12 +96,13 @@ contract RbConsensus is MiningBase {
             _recursionAddAmount(referUser, amount, i);
         }
     }
+
     bool public turnOnOff;
-    //添加代币的开关
+    //Switch to add tokens
     function setTurnOnOff(bool turnType) public onlyAdmin {
         turnOnOff = turnType;
     }
-    //管理员设置认购代币
+    //The administrator sets up subscription tokens
     function setTokenAllow(address[] memory allowToken) public onlyAdmin {
         require(turnOnOff == false, "0");
         for (uint i = 0; i < allowToken.length; i++) {
@@ -111,10 +113,7 @@ contract RbConsensus is MiningBase {
     }
 
 
-    /**
-     * -> Rbt  花费，购买rbt数量，代币地址，滑点
-    */
-
+    //Rbt cost, amount of rbt purchased, token address, slippage
     function getRBT(uint amount, address token, uint slip, string memory tokenName) public {
         //  (, uint64 price) = getPrice(tokenName);
         // uint amountRbt = amount.mul(price).div(10 ** 12).div(transferPrice).mul(100);
@@ -122,8 +121,8 @@ contract RbConsensus is MiningBase {
         uint amountRbt = amount.div(transferPrice).mul(100);
         uint totalPrice = amount;
         uint totalAmountRbt;
-        uint oneWRbtprice = 10000*10**18*transferOnePrice/100;
-        uint turnPrice =  transferPrice++;
+        uint oneWRbtprice = 10000 * 10 ** 18 * transferOnePrice / 100;
+        uint turnPrice = transferPrice++;
         uint transferOnePrice = transferPrice;
         require(tokenAllow[token] == true, "the token not allow");
         require(token != address(0), "Invalid address");
@@ -170,10 +169,7 @@ contract RbConsensus is MiningBase {
         });
 
 
-
-
-
-        //每轮可发生的购买情况
+        //Purchases that can occur in each round
         cumulRbt = cumulRbt.sub(amountRbt);
 
         if (cumulRbt > amountRbt) {
@@ -204,12 +200,12 @@ contract RbConsensus is MiningBase {
     }
 
 
-    //邀请挖矿获取释放层级释放率
+    //Invite mining to get the release level release rate
     function exchangeRatio(address addr) public view returns (uint, uint){
         uint amount = getUserTotalReceived(addr);
         uint ratio = 0;
         uint length = 0;
-        //vip等级
+        //vip level
         uint level = IRbtVip(vipAddress).getVipLevel(addr);
 
 
