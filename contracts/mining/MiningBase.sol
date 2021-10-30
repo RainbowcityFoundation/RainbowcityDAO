@@ -170,9 +170,9 @@ abstract contract MiningBase {
         require(deadline==0||deadline==3||deadline==6||deadline==12||deadline==24||deadline==36,"Deposit month error");
         // require(msg.sender == _bank_Address, 'The deadline is not a bank');
         // uint blockTime = uint32(block.timestamp % 2 ** 32);
-        //质押到期时间
+        //Pledge expiry time
         // uint endOfPle = blockTime.add(deadline);
-        //质押时间大于开始释放时间
+        //The pledge time is greater than the start release time
         // require(endOfPle > lockUpTotal[userAddress][witch].startTime, 'No extraction time');
         // require(lockUpTotal[userAddress][witch].amount > mAmount, ' Insufficient Balance');
         // lockUpTotal[userAddress][witch].mortgage = lockUpTotal[userAddress][witch].mortgage.add(mAmount);

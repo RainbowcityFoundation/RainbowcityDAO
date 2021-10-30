@@ -6,23 +6,23 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../lib/TransferHelper.sol";
 import "./MiningBase.sol";
 
-//邀请挖矿
+//Invite mining
 contract Rbinvite is MiningBase {
-    using SafeMath for uint;//安全库
-    //个人累计兑换
+    using SafeMath for uint;//Security library
+    //Individual cumulative redemption
     mapping(address => uint) public cumuRbt;
-    //以挖出的总量用于展示
+    //Use the total amount mined for display
     uint public digOutAmount;
-    //RBTEX地址
+    //RBTEX address
     address public _RBTEX;
-    //共识地址
+    //Consensus address
     address public RbConsensus;
-    //全部领取：用于展示
+    //Collect all: for display
     uint public allReceived;
-    //兑换记录每一笔信息
+    //Exchange records for every piece of information
     event PurchaseRecord (address  User , uint indexed tokenAmount , uint indexed rbtAmount ,address indexed tokenAddress );
 
-    //协调器传参
+    //Coordinator parameter transfer
     constructor(
         address ex,
         address rbt,
@@ -34,14 +34,12 @@ contract Rbinvite is MiningBase {
         RbConsensus = rbConsensus;
         admin = Aadmin;
     }
-    /*
-    *   RBTEX --> RBT 兑换
-    */
+    //RBTEX --> RBT exchange
     function getRBT(uint amount) public {
         (uint total,uint examount) = IRbConsensus(RbConsensus).exchangeRatio(msg.sender);
         TransferHelper.safeTransferFrom(_RBTEX, msg.sender, address(this), total);
         TransferHelper.safeTransfer(_Rbt, msg.sender, examount.div(5));
-        //数据展示
+        //Data Display
         allReceived = allReceived.add(examount.div(5));
         digOutAmount = digOutAmount.add(examount);
         cumuRbt[msg.sender] += examount;
